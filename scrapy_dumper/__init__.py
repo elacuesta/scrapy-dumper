@@ -1,10 +1,12 @@
 import logging
 import string
-import os
 from datetime import datetime
 from contextlib import suppress
+from pathlib import Path
 
-import scrapy
+from scrapy import signals
+from scrapy.exceptions import NotConfigured
+from scrapy.utils.project import project_data_dir
 
 
 def safe_filename(filename):
@@ -13,12 +15,12 @@ def safe_filename(filename):
     return ''.join([c for c in _filename if c in whitelist_characters])
 
 
-REQUESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../_requests')
-RESPONSES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../_responses')
+REQUESTS_DIR = Path(project_data_dir()).parent.joinpath('_requests')
+RESPONSES_DIR = Path(project_data_dir()).parent.joinpath('_responses')
 
 
 def dump(message, directory, filename, extension, body, headers, url, method, status):
-    filepath = f'{directory}/{filename}.{extension}'
+    filepath = '{}/{}.{}'.format(directory, filename, extension)
     with open(filepath, 'w') as file:
         if extension in ('html', 'xml', 'text'):
             headers = [
@@ -51,19 +53,17 @@ class DumperExtension:
     @classmethod
     def from_crawler(cls, crawler):
         if not crawler.settings.getbool('DEBUG_DUMP_REQUESTS_RESPONSES'):
-            raise scrapy.exceptions.NotConfigured
+            raise NotConfigured
         ext = cls()
-        crawler.signals.connect(ext.request_scheduled, signal=scrapy.signals.request_scheduled)
-        crawler.signals.connect(ext.response_received, signal=scrapy.signals.response_received)
-        with suppress(FileExistsError):
-            os.mkdir(REQUESTS_DIR)
-        with open(os.path.join(REQUESTS_DIR, '.gitignore'), 'w') as f:
-            f.write('*')
-        with suppress(FileExistsError):
-            os.mkdir(RESPONSES_DIR)
-        with open(os.path.join(RESPONSES_DIR, '.gitignore'), 'w') as f:
-            f.write('*')
         ext.logger = logging.getLogger(__name__)
+        crawler.signals.connect(ext.request_scheduled, signal=signals.request_scheduled)
+        crawler.signals.connect(ext.response_received, signal=signals.response_received)
+        REQUESTS_DIR.mkdir(exist_ok=True)
+        RESPONSES_DIR.mkdir(exist_ok=True)
+        with REQUESTS_DIR.joinpath('.gitignore').open(mode='w') as f:
+            f.write('*\n')
+        with RESPONSES_DIR.joinpath('.gitignore').open(mode='w') as f:
+            f.write('*\n')
         return ext
 
     def request_scheduled(self, request, spider):
