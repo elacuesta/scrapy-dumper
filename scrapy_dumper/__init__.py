@@ -40,6 +40,7 @@ def dump(message, directory, filename, extension, body, headers, url, method, st
             ]
             print(*data, file=file, sep='\n')
         print(body, file=file)
+        return filepath
 
 
 class DumperExtension:
@@ -75,7 +76,7 @@ class DumperExtension:
             content_type = request.headers.get('Content-Type', b'application/text').decode('utf8')
             extension = content_type.split(';')[0].split('/')[-1]
             body = request.body if request.body else b'(Empty body)'
-            dump(
+            filepath = dump(
                 message='REQUEST',
                 directory=REQUESTS_DIR,
                 filename=filename,
@@ -86,6 +87,7 @@ class DumperExtension:
                 method=request.method,
                 status='N/A',
             )
+            self.logger.debug('Request dumped to %s', filepath)
         except Exception as ex:
             self.logger.debug('Could not dump request: %s. Exception: %s', str(request), str(ex))
 
@@ -99,7 +101,7 @@ class DumperExtension:
             )
             content_type = response.headers.get('Content-Type', b'application/text').decode('utf8')
             extension = content_type.split(';')[0].split('/')[-1]
-            dump(
+            filepath = dump(
                 message='RESPONSE',
                 directory=RESPONSES_DIR,
                 filename=filename,
@@ -110,5 +112,6 @@ class DumperExtension:
                 method=request.method,
                 status=response.status,
             )
+            self.logger.debug('Response dumped to %s', filepath)
         except Exception as ex:
-            self.logger.debug('Could not dump request: %s. Exception: %s', str(response), str(ex))
+            self.logger.debug('Could not dump response: %s. Exception: %s', str(response), str(ex))
