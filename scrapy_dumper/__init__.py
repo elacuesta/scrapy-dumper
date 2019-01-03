@@ -56,8 +56,12 @@ class DumperExtension:
         crawler.signals.connect(ext.response_received, signal=scrapy.signals.response_received)
         with suppress(FileExistsError):
             os.mkdir(REQUESTS_DIR)
+        with open(os.path.join(REQUESTS_DIR, '.gitignore'), 'w') as f:
+            f.write('*')
         with suppress(FileExistsError):
             os.mkdir(RESPONSES_DIR)
+        with open(os.path.join(RESPONSES_DIR, '.gitignore'), 'w') as f:
+            f.write('*')
         ext.logger = logging.getLogger(__name__)
         return ext
 
