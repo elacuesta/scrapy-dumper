@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(
-    name='scrapy_dumper',
+    name='scrapy-dumper',
     version='0.1.0',
     description='Simple Scrapy extension to dump requests and responses',
     author='Eugenio Lacuesta',
